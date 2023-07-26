@@ -1274,8 +1274,9 @@ WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 
 			//開発用UIの処理。実際に開発用のUIを出す場合にはここをゲーム固有の処理に置き換える
-			//ImGui::ShowDemoWindow();
-
+			//ImGui::ShowDemoWindow();多分いらなさそう
+			
+			ImGui::Begin("cinfig");
 			ImGui::Checkbox("useMonsterBall", &useMonsterBall);
 
 
