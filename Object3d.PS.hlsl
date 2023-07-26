@@ -14,6 +14,12 @@ struct PixelShaderOutput {
 	float32_t4 color : SV_TARGET0;
 };
 
+//struct VertexShaderInput {
+//	float32_t4 position : POSITION0;
+//	float32_t2 texcoord : TEXCOORD0;
+//	float32_t3 normal : NORMAL0;
+//};
+
 PixelShaderOutput main(VertexShaderOutput input) {
 	PixelShaderOutput output;
 	//Texture‚ðSampling‚·‚é
