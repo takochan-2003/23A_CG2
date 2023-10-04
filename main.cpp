@@ -572,7 +572,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	Vector4* materialData = nullptr;
 	materialResource->Map(0, nullptr, reinterpret_cast<void**>(&materialData));
 	//色
-	*materialData = Vector4(1.0f, 0.0f, 0.0f, 1.0f);
+    float isColor[3] = { 1.0f,1.0f,1.0f };
+
 
 	ID3DBlob* signatureBlob = nullptr;
 	ID3DBlob* errorBlob = nullptr;
@@ -681,6 +682,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	Matrix4x4 worldViewProjectionMatrix = Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));
 	*wvpData = worldViewProjectionMatrix;
 
+
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGui::StyleColorsDark();
@@ -701,13 +703,39 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		}
 		else {
 
+#pragma region 更新処理
+
 			ImGui_ImplDX12_NewFrame();
 			ImGui_ImplWin32_NewFrame();
 			ImGui::NewFrame();
 
-			ImGui::ShowDemoWindow();
+
+	        *materialData = Vector4(isColor[0], isColor[1], isColor[2], 1.0f);
+			transform.rotate.y += 0.03f;
+			Matrix4x4 worldMatrix = MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
+			*wvpData = worldMatrix;
+
+			//ここからImGuiの追加するところ
+			
+			ImGui::Begin("Config");
+			//下に操作できるコマンドを積んでいく
+			if (ImGui::TreeNode("color")) {
+
+				ImGui::SliderFloat3("Color", isColor, 0.0f, 1.0f);  //色
+
+				ImGui::TreePop();
+			};
+
+			ImGui::End();
 
 			ImGui::Render();
+
+
+#pragma endregion
+
+
+#pragma region 描画処理
+
 
 			UINT backBufferIndex = swapChain->GetCurrentBackBufferIndex();
 
@@ -730,11 +758,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			commandList->RSSetScissorRects(1, &scissorRect);
 			commandList->SetGraphicsRootSignature(rootSignature);
 			commandList->SetPipelineState(graphicsPipelineState);
-			commandList->IASetVertexBuffers(0, 1, &vertexBufferView);
+			commandList->IASetVertexBuffers(0, 1, &vertexBufferView);										// 三角形の頂点データ
 			commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-			commandList->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
-			commandList->SetGraphicsRootConstantBufferView(1, wvpResource->GetGPUVirtualAddress());
-			commandList->DrawInstanced(3, 1, 0, 0);
+			commandList->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());	// 三角形の色
+			commandList->SetGraphicsRootConstantBufferView(1, wvpResource->GetGPUVirtualAddress());			// 三角形を動かすための行列(定数バッファ)、
+			
+			
+			commandList->DrawInstanced(3, 1, 0, 0);	// ここで三角形描画してるのでそれに必要な設定まこれより前に書く
 
 			ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
 
@@ -749,6 +779,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			commandQueue->ExecuteCommandLists(1, commandLists);
 			swapChain->Present(1, 0);
 
+
 			fenceValue++;
 			commandQueue->Signal(fence, fenceValue);
 
@@ -762,9 +793,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			hr = commandList->Reset(commandAllocator, nullptr);
 			assert(SUCCEEDED(hr));
 
-			transform.rotate.y += 0.03f;
-			Matrix4x4 worldMatrix = MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
-			*wvpData = worldMatrix;
+#pragma endregion
+
 
 
 
